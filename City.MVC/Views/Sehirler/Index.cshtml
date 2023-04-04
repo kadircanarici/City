@@ -1,0 +1,232 @@
+﻿@section Styles
+    {
+    <!-- DataTables -->
+    <link href="~/assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css" />
+    <!-- Responsive datatable examples -->
+    <link href="~/assets/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css" rel="stylesheet" type="text/css" />
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <h4 class="mb-0">Şehir</h4>
+
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                </ol>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+
+                <h4 class="card-title">Şehir</h4>
+                <button type="button" id="yeniKayit" class="btn btn-success waves-effect waves-light" data-bs-toggle="modal" data-bs-target="#modal">Yeni Ekle</button>
+                <p class="card-title-desc">
+                    Bu ekranda Şehir işlemleri yapabilirsiniz.
+                </p>
+
+                <table id="datatable-buttons" class="table table-striped table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Şehir</th>
+                            <th>Ülke</th>
+
+                            <th>İşlemler</th>
+
+                        </tr>
+                    </thead>
+
+
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div> <!-- end col -->
+</div> <!-- end row -->
+
+
+
+
+<div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel">Şehir </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 row">
+                    <label for="example-text-input" class="col-md-4 col-form-label">Şehir</label>
+                    <div class="col-md-8">
+                        <input class="form-control" type="text" id="txtSehirAdi" onkeypress="return sadeceHarf(event)">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label for="example-text-input" class="col-md-4 col-form-label">Ülke</label>
+                    <div class="col-md-8">
+                        <input class="form-control" type="text" id="txtUlkeAdi" onkeypress="return sadeceHarf(event)">
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light waves-effect" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" id="btnEkle" class="btn btn-primary waves-effect waves-light">Ekle</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+@section Scripts{
+    <!-- Required datatable js -->
+    <script src="~/assets/libs/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="~/assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Responsive examples -->
+    <script src="~/assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+
+
+
+    <script type="text/javascript">
+        var dataTable = $("#datatable-buttons").DataTable(
+            {
+                lengthChange: !1,
+                buttons: ["copy", "excel", "pdf", "colvis"],
+                ajax: "@Url.Action("GetAllSehirler")",
+                columns: [
+                    { data: 'sehirAdi' },
+                    { data: 'ulkeAdi' },
+
+                    {
+                        data: 'id', render: function (data, type) {
+                            return `<a onClick="deleteSehir('${data}')" class="btn btn-danger"> Sil </a> <a onClick="editSehir('${data}')" class="btn btn-info">Düzenle</a>`;
+                        }
+                    }
+
+                ]
+            }
+        );
+
+        $("#yeniKayit").click(function () {
+            $("#btnEkle").unbind();
+            $("#btnEkle").click(createSehir);
+            $("#btnEkle").text("Ekle");
+            $("#txtSehirAdi, #txtUlkeAdi").val('');
+
+        });
+        function createSehir() {
+
+            var veri = {
+                sehirAdi: $("#txtSehirAdi").val(),
+                ulkeAdi: $("#txtUlkeAdi").val()
+            }
+            $.ajax({
+                type: "POST",
+                data: veri,
+                url: "@Url.Action("CreateOneSehir","Sehirler")",
+                success: function (res) {
+                    $("#modal").modal('hide');
+                    toastr.success('Yeni Sehir başarıyla eklenmiştir.', 'Başarılı !');
+                    dataTable.ajax.reload();
+                    $("#txtSehirAdi, #txtUlkeAdi").val('');
+                }
+            });
+
+        };
+
+        function deleteSehir(id) {
+            
+            Swal.fire({
+                title: 'Silmek istediginizden emin misiniz ?',
+                showCancelButton: true,
+                confirmButtonText: 'Evet'
+
+            }).then((result) => {
+                /* Read more about isConfirmed, isDenied below */
+                if (result.isConfirmed) {
+
+                    var veri = { id: id }
+
+                    $.ajax({
+                        type: "POST",
+                        url: "@Url.Action("DeleteOneSehir","Sehirler")",
+                        data: veri,
+                        success: function (res) {
+                            dataTable.ajax.reload();
+
+                        }
+                    });
+
+                    Swal.fire('Silindi!', '', 'success')
+                }
+            });
+        }
+        function editSehir(id) {
+            
+            $("#btnEkle").unbind();
+            $("#modal").modal('show');
+
+            var veri = { id: id }
+
+            $.ajax({
+                type: "POST",
+                url: "@Url.Action("GetOneSehir","Sehirler")",
+                data: veri,
+                success: function (res) {
+                    $("#txtSehirAdi").val(res.sehirAdi);
+                    $("#txtUlkeAdi").val(res.ulkeAdi);
+                    $("#btnEkle").text("Güncelle");
+                   
+                    $("#btnEkle").click(function () {
+
+                        if ($("#txtSehirAdi").val() != res.sehirAdi || $("#txtUlkeAdi").val() != res.ulkeAdi) {
+                            veri =
+                            {
+                                id: id,
+                                sehirAdi: $("#txtSehirAdi").val(),
+                                ulkeAdi: $("#txtUlkeAdi").val()
+                            }
+
+                            $.ajax({
+                                type: "POST",
+                                url: "@Url.Action("UpdateOneSehir","Sehirler")",
+                                data: veri,
+                                success: function (res) {
+                                    dataTable.ajax.reload();
+                                    $("#modal").modal('hide');
+                                    toastr.success(' Sehir başarıyla düzenlenmiştir.', 'Düzenlendi !');
+                                    
+                                    console.log("editSehir calıstı.");
+                                }
+                            })
+                        }
+                        else {
+                            $("#modal").modal('hide');
+                        }
+                    })
+                }
+            })
+        }
+        //modal içindeki sehir ve ülke inputlarına sadece harf girişi yapılması sağlandı.
+        function sadeceHarf(event) {
+            var charCode = event.keyCode;
+            if (charCode > 31 && (charCode < 65 || charCode > 90) && (charCode < 97 || charCode > 122)) {
+                return false;
+            }
+            return true;
+        }
+
+
+    </script>
+
+}
